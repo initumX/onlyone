@@ -520,6 +520,12 @@ class CLIApplication:
 
     def error_exit(self, message: str, code: int = 1) -> NoReturn:
         self.logger.critical(message)
+        # Console logging is disabled in CLI mode, so fatal errors must also
+        # go to stderr or the user sees a silent non-zero exit.
+        try:
+            print(f"onlyone: error: {message}", file=sys.stderr)
+        except OSError:
+            pass
         raise SystemExit(code)
 
     def run(self) -> None:

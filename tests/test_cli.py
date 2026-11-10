@@ -492,3 +492,24 @@ class TestCLIBoostMode:
             with mock.patch('builtins.print'):
                 app = CLIApplication()
                 app.run()
+
+
+class TestErrorExitVisibility:
+    """Fatal CLI errors must reach stderr, not just the log file.
+
+    Console logging is disabled in CLI mode, so error_exit() used to leave
+    the user with a silent non-zero exit and no explanation.
+    """
+
+    def test_missing_input_dir_reports_error_on_stderr(self, tmp_path, capsys):
+        missing = tmp_path / 'nope'
+        with mock.patch.object(sys, 'argv', [
+            'onlyone', '--input', str(missing)
+        ]):
+            app = CLIApplication()
+            with pytest.raises(SystemExit) as exc_info:
+                app.run()
+        assert exc_info.value.code == 1
+        err = capsys.readouterr().err
+        assert 'Directory not found' in err
+        assert str(missing) in err
